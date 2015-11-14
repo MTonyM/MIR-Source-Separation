@@ -33,3 +33,10 @@ def writeWav(fn, fs, data):
 #     )
 def get_phase(spec):
     return tf.imag(tf.log(spec))
+
+
+def reals_to_complex_batch(spec_in):
+    real, imag = np.split(spec_in, 2, 2)
+    spec = np.array(real, dtype=complex)
+    spec.imag = imag
+    return spec
