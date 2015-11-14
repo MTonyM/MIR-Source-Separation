@@ -7,9 +7,11 @@ import os
 
 from scipy.io import wavfile
 from dataset import *
-from lstm import get_model
+from rnn import get_model
 from audio_op import *
 from config import *
+from evaluate import bss_eval_sources
+
 
 def writeWav(fn, fs, data):
     data = data * 1.5 / np.max(np.abs(data))
@@ -71,11 +73,19 @@ def main(args):
         
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # RNN
+    h_state = None    
     
     for epoch in range(num_epoches):
+        
+#         if os.path.exists('/'):
+            
+
         print('epoch {}'.format(epoch + 1))
+        
+        
         running_loss = 0.0
-        running_acc = 0.0
         for i, (inputs, target) in enumerate(train_loader):
             
             model.train()
@@ -88,8 +98,8 @@ def main(args):
                 inputs= Variable(inputs)
                 target = Variable(target)
 
-            out = model(inputs)
-            
+            out, h_state= model(inputs, h_state)
+            h_state = Variable(h_state.data)
             
             # Soft Masking        
 #             soft_song_mask = tf.abs(song_out) / (tf.abs(song_out) + tf.abs(voice_out) + 1e-10)s
@@ -108,8 +118,7 @@ def main(args):
             loss.backward()
             optimizer.step()
             print('[{}/{}] Loss: {:.6f}'.format(
-                epoch + 1, num_epoches, running_loss / (batch_size * i + 1e-4),
-                running_acc / (batch_size * i +  1e-4)))
+                epoch + 1, num_epoches, running_loss / (batch_size * i + 1e-4)))
 
             
             song_spec_out, voice_spec_out = np.split(out.data.cpu().numpy(), 2, 2)
@@ -117,22 +126,42 @@ def main(args):
             song_spec_out = reals_to_complex_batch(song_spec_out)
             voice_spec_out = reals_to_complex_batch(voice_spec_out)
             
+            song_spec_tar, voice_spec_tar = np.split(target.data.cpu().numpy(), 2, 2)
+            song_spec_tar = reals_to_complex_batch(song_spec_tar)
+            voice_spec_tar = reals_to_complex_batch(voice_spec_tar)
+            
+            mixed_spec = reals_to_complex_batch(inputs.data.cpu().numpy())
+            
             
             for batch_item in range(batch_size):
                 song_audio = create_audio_from_spectrogram(song_spec_out[batch_item,:,:], args)
                 voice_audio = create_audio_from_spectrogram(voice_spec_out[batch_item,:,:], args)
+                song_audio_tar = create_audio_from_spectrogram(song_spec_tar[batch_item,:,:], args)
+                voice_audio_tar = create_audio_from_spectrogram(voice_spec_tar[batch_item,:,:], args)                
+                mixed_audio = create_audio_from_spectrogram(mixed_spec[batch_item,:,:], args)   
                 
                 writeWav(os.path.join(result_wav_dir, 'song_%d_%d.wav' % (i, batch_item)), 
                          args.sample_rate, song_audio)
                 writeWav(os.path.join(result_wav_dir, 'voice_%d_%d.wav' % (i, batch_item)), 
                          args.sample_rate, song_audio)
-                print('=> done write :', '%d_%d' % (i, batch_item))
+                
+                soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, 
+                                                                   voice_audio_tar, song_audio, voice_audio)
+                
+                
+                print('=> done write :', '%d_%d' % (i, batch_item), soft_gnsdr[0], soft_gnsdr[1], soft_gsir[0], soft_gsir[1], soft_gsar[0], soft_gsar[1])
+#                 print('=> done write :', '%d_%d' % (i, batch_item), 
+#                       "GNSDR: %fdB "%soft_gnsdr, 
+#                       "GSIR: %fdB"%soft_gsir, 
+#                       "GSAR: %fdB "%soft_gsar)
 
             
             # soft masking
         
             # eval   
         
+            
+            
 if __name__ == '__main__':
     args = get_args()
     main(args)

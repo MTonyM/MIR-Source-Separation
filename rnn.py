@@ -2,6 +2,7 @@ import torch
 from torch import nn, optim
 from torch.autograd import Variable
 from config import *
+import numpy as np
 
 class RNN(nn.Module):
     def __init__(self, in_dim, hidden_dim, n_layer, out_dim):
@@ -27,13 +28,13 @@ class RNN(nn.Module):
         for time_step in range(r_out.size(1)):    # 对每一个时间点计算 output
             outs_voice.append(self.out_voice(r_out[:, time_step, :]))
             outs_song.append(self.out_song(r_out[:, time_step, :]))
-        return torch.hstack(torch.stack(outs_voice, dim=1), torch.stack(out_song, dim=1)), h_state
+        return torch.cat((torch.stack(outs_voice, dim=1), torch.stack(outs_song, dim=1)), 2), h_state
 
-    
+
 def get_model(args):
-    in_dim 1026
+    in_dim = 1026
     hidden_dim= 1000
     n_layer = 3
-    out_dim 2*in_dim
+    out_dim = 2*in_dim
     model = RNN(in_dim, hidden_dim, n_layer, out_dim)
     return model
