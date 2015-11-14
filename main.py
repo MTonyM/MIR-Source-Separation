@@ -131,9 +131,7 @@ def main(args):
             
             
             # loss
-            
             loss = criterion(out, target)
-            print('target shape', target.shape)
             running_loss += loss
             optimizer.zero_grad()
             loss.backward()
@@ -146,7 +144,6 @@ def main(args):
             song_spec_out, voice_spec_out = np.split(out.data.cpu().numpy(), 2, 2)
             
             song_spec_out = reals_to_complex_batch(song_spec_out)
-            
             voice_spec_out = reals_to_complex_batch(voice_spec_out)
             
             

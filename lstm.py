@@ -29,9 +29,9 @@ class Rnn(nn.Module):
         return out
     
 def get_model(args):
-    in_dim 1026
+    in_dim = 1026
     hidden_dim= 1000
     n_layer = 3
-    out_dim 2*in_dim
+    out_dim = 2*in_dim
     model = Rnn(in_dim, hidden_dim, n_layer, out_dim)
     return model
