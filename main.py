@@ -78,8 +78,10 @@ def main(args):
     h_state = None    
     
     for epoch in range(num_epoches):
+        epoch_file = './results/epoch_%d'% epoch
+        if not os.path.exists(epoch_file):
+            os.makedirs(epoch_file)
         
-#         if os.path.exists('/'):
             
 
         print('epoch {}'.format(epoch + 1))
@@ -87,7 +89,10 @@ def main(args):
         
         running_loss = 0.0
         for i, (inputs, target) in enumerate(train_loader):
-            
+            batch_file = epoch_file + '/batch_%d'%i 
+            if not os.path.exists(batch_file):
+                os.makedirs(batch_file)
+
             model.train()
 
             # Variable
@@ -97,10 +102,12 @@ def main(args):
             else:
                 inputs= Variable(inputs)
                 target = Variable(target)
-
-            out, h_state= model(inputs, h_state)
-            h_state = Variable(h_state.data)
+            try:
+                out, h_state= model(inputs, h_state)
+            except:
+                break
             
+            h_state = Variable(h_state.data)
             # Soft Masking        
 #             soft_song_mask = tf.abs(song_out) / (tf.abs(song_out) + tf.abs(voice_out) + 1e-10)s
 #             soft_voice_mask = 1 - soft_song_mask
@@ -140,9 +147,9 @@ def main(args):
                 voice_audio_tar = create_audio_from_spectrogram(voice_spec_tar[batch_item,:,:], args)                
                 mixed_audio = create_audio_from_spectrogram(mixed_spec[batch_item,:,:], args)   
                 
-                writeWav(os.path.join(result_wav_dir, 'song_%d_%d.wav' % (i, batch_item)), 
+                writeWav(os.path.join(batch_file, 'song_%d_%d.wav' % (i, batch_item)), 
                          args.sample_rate, song_audio)
-                writeWav(os.path.join(result_wav_dir, 'voice_%d_%d.wav' % (i, batch_item)), 
+                writeWav(os.path.join(batch_file, 'voice_%d_%d.wav' % (i, batch_item)), 
                          args.sample_rate, song_audio)
                 
                 soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, 
