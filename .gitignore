@@ -3,4 +3,4 @@ results
 test
 *.pth
 *.py[cod]
-pre
+results_nomask_disc0.1/

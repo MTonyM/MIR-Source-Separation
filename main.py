@@ -12,7 +12,6 @@ from audio_op import *
 from config import *
 from evaluate import bss_eval_sources
 
-
 def writeWav(fn, fs, data):
     data = data * 1.5 / np.max(np.abs(data))
     wavfile.write(fn, fs, data)
@@ -63,8 +62,8 @@ def main(args):
     batch_size = args.batch_size
     result_wav_dir = './results'
     
-    train_dataset = iKala(args.len_frame, args.len_hop)
-    train_loader = DataLoader(dataset = train_dataset, batch_size = batch_size)
+    train_dataset = iKala_aug(args.len_frame, args.len_hop)
+    train_loader = DataLoader(dataset = train_dataset, batch_size = batch_size,shuffle=True)
     
     model = get_model(args)
     use_gpu = torch.cuda.is_available()  # 
@@ -88,39 +87,84 @@ def main(args):
         
         
         running_loss = 0.0
-        for i, (inputs, target) in enumerate(train_loader):
+        for i, (inputs, target, phase) in enumerate(train_loader):
+            
             batch_file = epoch_file + '/batch_%d'%i 
             if not os.path.exists(batch_file):
                 os.makedirs(batch_file)
 
             model.train()
-
+            
+            
+            #concatenate
+#             if i == 0:
+#                 last_win = train_loader[i][0]
+#             else:
+#                 last_win = train_loader[i-1][0]
+                    
+#             if i ==   train_loader.shape[0]:
+#                 next_win = train_loader[i][0]
+#             else:
+#                 next_win == train_loader[i+1][0]
+                
+#             inputs = concatenate( (last_win, inputs, next_win), axis=1)   
+            
+                
+                
             # Variable
             if use_gpu:
+                print('use gpu')
                 inputs= Variable(inputs).cuda()
+#                 print('inputs',inputs.shape)
                 target = Variable(target).cuda()
+#                 print('target',target.shape)
             else:
                 inputs= Variable(inputs)
                 target = Variable(target)
             try:
                 out, h_state= model(inputs, h_state)
             except:
+                print('break')
                 break
             
             h_state = Variable(h_state.data)
             # Soft Masking        
-#             soft_song_mask = tf.abs(song_out) / (tf.abs(song_out) + tf.abs(voice_out) + 1e-10)s
+#             soft_song_mask = tf.abs(song_out) / (tf.abs(song_out) + tf.abs(voice_out) + 1e-10)
 #             soft_voice_mask = 1 - soft_song_mask
 #             input_spec_curr = self.input[:,:,1]  # current frame of input spec
+
+
 #             soft_song_output = apply_mask(input_spec_curr, soft_song_mask)
 #             soft_voice_output = apply_mask(input_spec_curr, soft_voice_mask)
 #             self.soft_masked_output = tf.concat([soft_song_output, soft_voice_output], axis=1)
             
             
-            
+            pre_win,inputs,next_win = torch.split(inputs, (513,513,513), dim = 2)
             # loss
-            loss = criterion(out, target)
+            print(out.shape)
+            song_mag_out, voice_mag_out = torch.split(out, (513,513), dim = 2)
+            song_mag_tar, voice_mag_tar = torch.split(target, (513,513), dim = 2)
+            
+            
+            # Apply mask 
+            
+            song_mag_mask, voice_mag_mask = soft_mask(song_mag_out, voice_mag_out, inputs)
+            
+            # Disc_loss
+            disc_lambda = 0.05
+            loss = criterion(song_mag_out,song_mag_tar) + criterion(voice_mag_out,voice_mag_tar) - disc_lambda * ( criterion(song_mag_out,voice_mag_tar) + criterion(voice_mag_out,song_mag_tar))
+    
+    
+#             # Standard_loss
+#             print('compute loss')
+#             loss = criterion(out,target)
+            
+            
+            
+            
             running_loss += loss
+          
+            
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -128,21 +172,37 @@ def main(args):
                 epoch + 1, num_epoches, running_loss / (batch_size * i + 1e-4)))
 
             
-            song_spec_out, voice_spec_out = np.split(out.data.cpu().numpy(), 2, 2)
+            phase = phase.numpy()
+            mixed_spec = merge_mag_phase(inputs.data.cpu().numpy(), phase)
+
+            song_spec_out = merge_mag_phase(song_mag_out.cpu().detach().numpy(),phase)
+            voice_spec_out = merge_mag_phase(voice_mag_out.cpu().detach().numpy(),phase)
+            song_spec_mask = merge_mag_phase(song_mag_mask.cpu().detach().numpy(),phase)
+            voice_spec_mask = merge_mag_phase(voice_mag_mask.cpu().detach().numpy(),phase)            
             
-            song_spec_out = reals_to_complex_batch(song_spec_out)
-            voice_spec_out = reals_to_complex_batch(voice_spec_out)
             
-            song_spec_tar, voice_spec_tar = np.split(target.data.cpu().numpy(), 2, 2)
-            song_spec_tar = reals_to_complex_batch(song_spec_tar)
-            voice_spec_tar = reals_to_complex_batch(voice_spec_tar)
+            song_spec_tar = merge_mag_phase(song_mag_tar.cpu().detach().numpy(), phase)
+            voice_spec_tar = merge_mag_phase(voice_mag_tar.cpu().detach().numpy(), phase)
+
             
-            mixed_spec = reals_to_complex_batch(inputs.data.cpu().numpy())
+
+#             song_spec_out, voice_spec_out = np.split(out.data.cpu().numpy(), 2, 2)   
+#             song_spec_out = reals_to_complex_batch(song_spec_out)
+#             voice_spec_out = reals_to_complex_batch(voice_spec_out)
+            
+#             song_spec_tar, voice_spec_tar = np.split(target.data.cpu().numpy(), 2, 2)
+#             song_spec_tar = reals_to_complex_batch(song_spec_tar)
+#             voice_spec_tar = reals_to_complex_batch(voice_spec_tar)
+            
+#             mixed_spec = reals_to_complex_batch(inputs.data.cpu().numpy())
             
             
             for batch_item in range(batch_size):
                 song_audio = create_audio_from_spectrogram(song_spec_out[batch_item,:,:], args)
                 voice_audio = create_audio_from_spectrogram(voice_spec_out[batch_item,:,:], args)
+                song_audio_mask = create_audio_from_spectrogram(song_spec_mask[batch_item,:,:], args)
+                voice_audio_mask = create_audio_from_spectrogram(voice_spec_mask[batch_item,:,:], args)                
+                
                 song_audio_tar = create_audio_from_spectrogram(song_spec_tar[batch_item,:,:], args)
                 voice_audio_tar = create_audio_from_spectrogram(voice_spec_tar[batch_item,:,:], args)                
                 mixed_audio = create_audio_from_spectrogram(mixed_spec[batch_item,:,:], args)   
@@ -150,7 +210,13 @@ def main(args):
                 writeWav(os.path.join(batch_file, 'song_%d_%d.wav' % (i, batch_item)), 
                          args.sample_rate, song_audio)
                 writeWav(os.path.join(batch_file, 'voice_%d_%d.wav' % (i, batch_item)), 
-                         args.sample_rate, song_audio)
+                         args.sample_rate, voice_audio)
+                writeWav(os.path.join(batch_file, 'mixed_%d_%d.wav' % (i, batch_item)), 
+                         args.sample_rate, mixed_audio)
+                writeWav(os.path.join(batch_file, 'song_%d_%d_mask.wav' % (i, batch_item)), 
+                         args.sample_rate, song_audio_mask)
+                writeWav(os.path.join(batch_file, 'voice_%d_%d_mask.wav' % (i, batch_item)), 
+                         args.sample_rate, voice_audio_mask)
                 
                 soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, 
                                                                    voice_audio_tar, song_audio, voice_audio)

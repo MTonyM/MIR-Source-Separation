@@ -14,8 +14,8 @@ class RNN(nn.Module):
             num_layers=n_layer,       # 有几层 RNN layers
             batch_first=True,   # input & output 会是以 batch size 为第一维度的特征集 e.g. (batch, time_step, input_size)
         )
-        self.out_voice = nn.Linear(hidden_dim, in_dim)
-        self.out_song = nn.Linear(hidden_dim, in_dim)
+        self.out_voice = nn.Linear(hidden_dim, out_dim)
+        self.out_song = nn.Linear(hidden_dim, out_dim)
  
     def forward(self, x, h_state):  # 因为 hidden state 是连续的, 所以我们要一直传递这一个 state
         # x (batch, time_step, input_size)
@@ -32,9 +32,9 @@ class RNN(nn.Module):
 
 
 def get_model(args):
-    in_dim = 1026
+    in_dim = 3*513 
     hidden_dim= 1000
     n_layer = 3
-    out_dim = 2*in_dim
+    out_dim = 513
     model = RNN(in_dim, hidden_dim, n_layer, out_dim)
     return model
