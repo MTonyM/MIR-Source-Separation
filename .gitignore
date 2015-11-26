@@ -4,3 +4,4 @@ test
 *.pth
 *.py[cod]
 results_nomask_disc0.1/
+results_magloss_linmask_disc0.05/

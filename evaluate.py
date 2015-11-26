@@ -877,3 +877,25 @@ def evaluate(reference_sources, estimated_sources, **kwargs):
 
 # result = evaluate(reference, estimated)
 # print(result)
+
+def bss_eval_global(mixed_wav, src1_wav, src2_wav, pred_src1_wav, pred_src2_wav):
+    len_cropped = pred_src1_wav.shape[-1]
+    src1_wav = src1_wav[:len_cropped]
+    src2_wav = src2_wav[:len_cropped]
+    mixed_wav = mixed_wav[:len_cropped]
+    gnsdr, gsir, gsar = np.zeros(2), np.zeros(2), np.zeros(2)
+    total_len = 0
+
+    sdr, sir, sar, _ = bss_eval_sources(np.array([src1_wav, src2_wav]),
+                                        np.array([pred_src1_wav, pred_src2_wav]), False)
+    sdr_mixed, _, _, _ = bss_eval_sources(np.array([src1_wav, src2_wav]),
+                                          np.array([mixed_wav, mixed_wav]), False)
+    nsdr = sdr - sdr_mixed
+    gnsdr += len_cropped * nsdr
+    gsir += len_cropped * sir
+    gsar += len_cropped * sar
+    total_len += len_cropped
+    gnsdr = gnsdr / total_len
+    gsir = gsir / total_len
+    gsar = gsar / total_len
+    return gnsdr, gsir, gsar
