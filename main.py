@@ -140,10 +140,17 @@ for epoch in range(num_epoches):
             voice_audio_mask = create_audio_from_spectrogram(voice_spec_mask[batch_item,:,:], args)                
 
             song_audio_tar = create_audio_from_spectrogram(song_spec_tar[batch_item,:,:], args)
-            voice_audio_tar = create_audio_from_spectrogram(voice_spec_tar[batch_item,:,:], args)                
-            mixed_audio = np.concatenate([voice_audio_tar, song_audio_tar], axis=0) 
+            voice_audio_tar = create_audio_from_spectrogram(voice_spec_tar[batch_item,:,:], args) 
+            
+
+            song_audio_tar = song_audio_tar[:,np.newaxis]
+            voice_audio_tar =voice_audio_tar[:,np.newaxis]
+            mixed_audio = np.concatenate([voice_audio_tar, song_audio_tar], axis=1) 
+            
+            
             t3_2 = time.time()
             print('creat audio time:',t3_2-t3_1)
+            
             writeWav(os.path.join(batch_file, '%d_%d_song.wav' % (i, batch_item)), 
                      args.sample_rate, song_audio)
             writeWav(os.path.join(batch_file, '%d_%d_voice.wav' % (i, batch_item)), 
@@ -154,6 +161,8 @@ for epoch in range(num_epoches):
                      args.sample_rate, song_audio_mask)
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)), 
                      args.sample_rate, voice_audio_mask)
+            
+            
             t3_3 = time.time()
             print('writeWav time:',t3_3-t3_2)
             
