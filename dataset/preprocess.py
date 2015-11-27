@@ -34,13 +34,7 @@ def stftGenerate(args, info):
     all_spec = []
     print("iKala has total number of %d"%len(records)," doing preprocessing ...")
     for idx in range(len(records)) :
-        
-        ###### DEBUG
-#         if idx > 10:
-#             break
-            
-        #############################
-        
+       
         # load records
         record_path = os.path.join(base_dir, records[idx])
         sound, sample_rate = librosa.load(record_path, mono=False, sr=44100)
@@ -104,12 +98,6 @@ def stftGenerate_aug(args, info):
     all_spec = []
     print("iKala has total number of %d"%len(records)," doing preprocessing ...")
     for idx in range(len(records)) :
-        
-        ###### DEBUG
-#         if idx > 10:
-#             break
-            
-        #############################
         
         # load records
         record_path = os.path.join(base_dir, records[idx])

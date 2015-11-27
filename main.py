@@ -25,7 +25,6 @@ args = get_args()
 num_epoches = args.num_epoches
 learning_rate = args.learning_rate
 batch_size = args.batch_size
-result_wav_dir = './results'
 
 train_dataset = get_dataloader(args)
 trainLoader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
@@ -55,7 +54,7 @@ logger = {'train' : open(os.path.join(args.resume, 'train.log'), 'a+'),
 # RNN
 h_state = None
 for epoch in range(num_epoches):
-    epoch_file = './results/epoch_%d'% epoch
+    epoch_file = os.path.join('../results', args.resume, 'epoch_%d'% epoch)
     if not os.path.exists(epoch_file):
         os.makedirs(epoch_file)
     best_loss = math.inf
@@ -65,7 +64,6 @@ for epoch in range(num_epoches):
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
         model.train()
-        t0=time.time()
         # Variable
         if args.GPU:
             inputs= Variable(inputs).cuda()
@@ -105,9 +103,6 @@ for epoch in range(num_epoches):
 
 
         running_loss += loss
-    
-        t1 = time.time()
-        print('input-loss compute time:' ,t1-t0)
         
         optimizer.zero_grad()
         loss.backward()
@@ -116,8 +111,6 @@ for epoch in range(num_epoches):
         log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
         logger['train'].write(log)
         print(log)
-        t2 = time.time()
-        print('backward compute time:' ,t2-t1)
         
         phase = phase.numpy()
         mixed_spec = merge_mag_phase(inputs.data.cpu().numpy(), phase)
@@ -129,11 +122,8 @@ for epoch in range(num_epoches):
 
         song_spec_tar = merge_mag_phase(song_mag_tar.cpu().detach().numpy(), phase)
         voice_spec_tar = merge_mag_phase(voice_mag_tar.cpu().detach().numpy(), phase)
-        t3 = time.time()
-        print('combine phase compute time:' ,t3-t2)
 
         for batch_item in range(batch_size):
-            t3_1 = time.time()
             song_audio = create_audio_from_spectrogram(song_spec_out[batch_item,:,:], args)
             voice_audio = create_audio_from_spectrogram(voice_spec_out[batch_item,:,:], args)
             song_audio_mask = create_audio_from_spectrogram(song_spec_mask[batch_item,:,:], args)
@@ -146,11 +136,7 @@ for epoch in range(num_epoches):
             song_audio_tar = song_audio_tar[:,np.newaxis]
             voice_audio_tar =voice_audio_tar[:,np.newaxis]
             mixed_audio = np.concatenate([voice_audio_tar, song_audio_tar], axis=1) 
-            
-            
-            t3_2 = time.time()
-            print('creat audio time:',t3_2-t3_1)
-            
+                        
             writeWav(os.path.join(batch_file, '%d_%d_song.wav' % (i, batch_item)), 
                      args.sample_rate, song_audio)
             writeWav(os.path.join(batch_file, '%d_%d_voice.wav' % (i, batch_item)), 
@@ -162,10 +148,6 @@ for epoch in range(num_epoches):
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)), 
                      args.sample_rate, voice_audio_mask)
             
-            
-            t3_3 = time.time()
-            print('writeWav time:',t3_3-t3_2)
-            
 #=======================================================
 #             soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, 
 #                                                                voice_audio_tar, song_audio, voice_audio)
@@ -174,7 +156,6 @@ for epoch in range(num_epoches):
 #             log = '=> done write :' + '%d_%d' % (i, batch_item) + "|" +str(soft_gnsdr[0])+ "|" + \
 #                     str(soft_gnsdr[1])+"|" + str(soft_gsir[0])+ "|" +str(soft_gsir[1])+"|" + \
 #                     str(soft_gsar[0])+"|"+str(soft_gsar[1])+"\n"
-
 #====================================================
             log='=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: %d' % (avg_loss)
             print(log)
@@ -182,7 +163,6 @@ for epoch in range(num_epoches):
             if args.debug:
                 break
         
-        t4 = time.time()
         print('write_file compute time:' ,t4-t3)
         
         if args.debug:
