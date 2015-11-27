@@ -4,12 +4,13 @@ import librosa
 import numpy as np
 from audio_op import *
 
+data_root = "/home/maoym/MIR-separation/DL_monaural_separation/pyTorch_version/data"
 
 class iKala(Dataset):
     def __init__(self, args):
         self.len_frame = args.len_frame
         self.len_hop = args.len_hop
-        self.spec_list = torch.load("../../data/spec/iKala_spec_f%d_h%d.pth" % (self.len_frame, self.len_hop))["iKala_specs"]
+        self.spec_list = torch.load(data_root + "/spec/iKala_spec_f%d_h%d.pth" % (self.len_frame, self.len_hop))["iKala_specs"]
 
     def __getitem__(self, idx):
         # load file
@@ -18,7 +19,7 @@ class iKala(Dataset):
         input_mag = mixed_mag
         target_mag = np.concatenate((song_mag, voice_mag), axis=1)
         return input_mag, target_mag, phase
-    
+
     def __len__(self):
         return len(self.spec_list)
 
@@ -27,7 +28,7 @@ class iKala_aug(Dataset):
     def __init__(self, args):
         self.len_frame = args.len_frame
         self.len_hop = args.len_hop
-        self.spec_list = torch.load("../../data/spec/iKala_spec_f%d_h%d_aug.pth" % (self.len_frame, self.len_hop))["iKala_specs"]
+        self.spec_list = torch.load(data_root + "/spec/iKala_spec_f%d_h%d_aug.pth" % (self.len_frame, self.len_hop))["iKala_specs"]
         
     def __getitem__(self, idx):
         data = torch.load(self.spec_list[idx])
