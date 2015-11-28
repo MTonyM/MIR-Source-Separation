@@ -46,7 +46,7 @@ def get_args():
 
     parser.add_argument('--mode', help='0: train 1:test', default=0)
     parser.add_argument('--saveEpoch', default=5, type=int, help='saving at least # epochs')
-    parser.add_argument('--train_ration', help='ration of trainset in dataset', default=0.9)
+    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.9)
 
     
     args = parser.parse_args()

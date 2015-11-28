@@ -1,6 +1,5 @@
 from torch import optim
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
 import numpy as np
 from utils.audio_op import *
 from options import *
@@ -19,9 +18,7 @@ num_epoches = args.num_epoches
 learning_rate = args.learning_rate
 batch_size = args.batch_size
 
-train_dataset = get_dataloader(args)
-trainLoader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
+trainLoader, testLoader = get_dataloader(args)
 
 print('=> Checking checkpoints')
 checkpoint = checkpoints.load(args)
@@ -53,8 +50,6 @@ scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.LRDParam, gamma=
 # RNN
 h_state = None
 avg_loss = math.inf
-total_batches = np.floor(1.0 * len(train_dataset) / batch_size)
-print(total_batches)
 for epoch in range(epoch_start, num_epoches):
     epoch_file = os.path.join('../results', args.resume, 'epoch_%d'% epoch)
     if not os.path.exists(epoch_file):
@@ -62,8 +57,6 @@ for epoch in range(epoch_start, num_epoches):
     best_loss = math.inf
     running_loss = 0.0
     for i, (inputs, target, phase) in enumerate(trainLoader):
-        if (i == total_batches-1):
-            continue
         batch_file = epoch_file + '/batch_%d' % i
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
@@ -76,13 +69,6 @@ for epoch in range(epoch_start, num_epoches):
             inputs = Variable(inputs)
             target = Variable(target)
         out, h_state= model(inputs, h_state)
-        try:
-            out, h_state= model(inputs, h_state)
-        except:
-            print("h_state is error")
-            break
-
-
         h_state = Variable(h_state.data)
 
         pre_win, inputs, next_win = torch.split(inputs, (513, 513, 513), dim=2)
@@ -157,9 +143,6 @@ for epoch in range(epoch_start, num_epoches):
 #                     str(soft_gnsdr[1])+"|" + str(soft_gsir[0])+ "|" +str(soft_gsir[1])+"|" + \
 #                     str(soft_gsar[0])+"|"+str(soft_gsar[1])+"\n"
 #====================================================
-            log = '=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: \033[1;36m%1.4f\033[0m' % (avg_loss)
-            print(log)
-            logger['train'].write(log)
 
     bestModel = False
     if avg_loss < best_loss:
