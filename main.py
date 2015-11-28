@@ -230,7 +230,7 @@ for epoch in range(epoch_start, num_epoches):
             pbar_val.update(i * batch_size + batch_item, [])
 
     log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
-    logger['test'].write(log)
+    logger['val'].write(log)
     print(log)
 
     bestModel = False
