@@ -13,7 +13,7 @@ def get_args():
     parser.add_argument('--load', help='load weights')
     parser.add_argument('--augment', help='if do augmentation', default=True, type=str2bool)
     parser.add_argument('--debug', help='if debug', default=False, type=str2bool)
-    parser.add_argument('--batch_size', help='batch size', default=64)
+    parser.add_argument('--batch_size', help='batch size', default=50, type=int)
     ######################### train par
     parser.add_argument('--num_epoches', help='epoches num', default=5, type=int)
     parser.add_argument('--epochNum', default=-1, type=int, help='0=retrain | -1=latest | -2=best', choices=[0, -1, -2])

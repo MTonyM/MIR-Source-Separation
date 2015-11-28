@@ -137,7 +137,7 @@ for epoch in range(epoch_start, num_epoches):
                      args.sample_rate, song_audio_mask)
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio_mask)
-            pbar.update(i*batch_size + batch_item , [])
+            pbar.update(i*batch_size + batch_item + 1, [])
     log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
     logger['train'].write(log)
     print(log)
@@ -165,10 +165,7 @@ for epoch in range(epoch_start, num_epoches):
         else:
             inputs = Variable(inputs)
             target = Variable(target)
-        try:
-            out, h_state = model(inputs, h_state)
-        except:
-            break
+        out, h_state = model(inputs, h_state)
         h_state = Variable(h_state.data)
 
         _, inputs, _ = torch.split(inputs, (513, 513, 513), dim=2)
@@ -227,7 +224,7 @@ for epoch in range(epoch_start, num_epoches):
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio_mask)
 
-            pbar_val.update(i * batch_size + batch_item, [])
+            pbar_val.update(i * batch_size + batch_item + 1, [])
 
     log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
     logger['val'].write(log)
