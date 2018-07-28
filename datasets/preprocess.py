@@ -13,20 +13,17 @@ import math
 def listGenerate(args):    
     records = os.listdir(args.dir)
     records.remove('.ipynb_checkpoints')
+    
     total_num = len(records)
-    ####### check folder exist
-    wav_folder = "./../../data/wav/" + args.dataset 
+    wav_folder = os.path.join(args.data_root, "wav", args.dataset)
     if not os.path.exists(wav_folder):
-            os.makedirs(wav_folder)   
-
-#     all_shuffle = torch.randperm(total_num)
-#     all_path = [records[i] for i in all_shuffle]
+        os.makedirs(wav_folder)   
     info = {
         "base_dir": args.dir,
         "total_num": total_num,
         "file_name": records        
     }
-    torch.save(info, "./../../data/wav" + args.dataset + "_origin.pth")
+    torch.save(info, os.path.join(args.data_root, "wav", args.dataset + "_origin.pth"))
     return info
 
 def stftGenerate(args, info):
@@ -46,21 +43,15 @@ def stftGenerate(args, info):
         
         
     ################ check folders exist
-    dataset_folder = "./../../data/pre/" + args.dataset 
+    dataset_folder = os.path.join(args.data_root, "pre", args.dataset)
     if not os.path.exists(dataset_folder):
         os.makedirs(dataset_folder)
         
-    spec_folder = "./../../data/spec/" + args.dataset  
+    spec_folder = os.path.join(args.data_root, "spec", args.dataset)
     if not os.path.exists(spec_folder):
         os.makedirs(spec_folder)
     
     for idx in range(len(records)):
-        
-        ###### DEBUG
-#         if idx > 10:
-#             break
-            
-        #############################
         
         # load records
         record_path = os.path.join(base_dir, records[idx])
@@ -82,18 +73,6 @@ def stftGenerate(args, info):
             voice_spec = librosa.stft(voice, n_fft=len_frame, hop_length=len_hop).transpose()
             mixed_spec = librosa.stft(mixed, n_fft=len_frame, hop_length=len_hop).transpose()
 
-    #         print(mixed_spec.shape)
-    #         mixed_audio = create_audio_from_spectrogram(mixed_spec,args)
-    #         print (mixed_audio.shape)
-
-    #         writeWav(os.path.join('./test','mixed_%d.wav' % (idx)), args.sample_rate, mixed_audio)
-    #         print('done')
-
-            # find real part of spectrum
-    #         song_spec, voice_spec, mixed_spec = spectrogram_split_real_imag(song_spec), \
-    #                                             spectrogram_split_real_imag(voice_spec), \
-    #                                             spectrogram_split_real_imag(mixed_spec)
-    
             song_mag,voice_mag,mixed_mag = np.absolute(song_spec),np.absolute(voice_spec),np.absolute(mixed_spec)
             song_phase,voice_phase,mixed_phase = get_phase(song_spec),get_phase(voice_spec),get_phase(mixed_spec)
 
@@ -112,7 +91,7 @@ def stftGenerate(args, info):
                 "wav_name": wav_name
             }
 
-            file_path = os.path.join("./../../data/pre/" + args.dataset, wav_name + "_spec_shiftStep_%d.pth" % (shift_len))
+            file_path = os.path.join(args.data_root, "spec", args.dataset, wav_name + "_spec_%d.pth" % (shift_len))
 
             torch.save(data, file_path)
             print("=> saved #%d: "%(idx) , file_path)
@@ -121,8 +100,7 @@ def stftGenerate(args, info):
     info = {
         "iKala_specs" : all_spec
     }
-    
-    torch.save(info, "./../../data/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop))
+    torch.save(info, os.path.join(args.data_root, "info", args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop)))
 
         
     

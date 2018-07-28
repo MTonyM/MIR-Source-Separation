@@ -1,7 +1,7 @@
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-
+import numpy as np
 from utils.audio_op import *
 from options import *
 from datasets.dataset import get_dataloader
@@ -32,40 +32,51 @@ if args.GPU:
     model = model.cuda()
 criterion = criterions.setup(args, checkpoint, model)
 # ************************* (need changed)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, betas=(args.momentum, 0.999), eps=1e-8, weight_decay=args.weightDecay)
+
 if optimState != None:
     optimizer.load_state_dict(optimState)
 # **************************
+bestLoss = 0.0
+epoch_start = 0
 if checkpoint != None:
-    startEpoch = checkpoint['epoch'] + 1
+    epoch_start = checkpoint['epoch'] + 1
     bestLoss = checkpoint['loss']
     print('Previous loss: \033[1;36m%1.4f\033[0m' % bestLoss)
 
 logger = {'train' : open(os.path.join(args.resume, 'train.log'), 'a+'),
             'val' : open(os.path.join(args.resume, 'test.log'), 'a+')}    
-    
+
+
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.LRDParam, gamma=0.1, last_epoch=epoch_start-1)
+
 # RNN
 h_state = None
-for epoch in range(num_epoches):
+avg_loss = math.inf
+total_batches = np.floor(1.0 * len(train_dataset) / batch_size)
+print(total_batches)
+for epoch in range(epoch_start, num_epoches):
     epoch_file = os.path.join('../results', args.resume, 'epoch_%d'% epoch)
     if not os.path.exists(epoch_file):
         os.makedirs(epoch_file)
     best_loss = math.inf
     running_loss = 0.0
     for i, (inputs, target, phase) in enumerate(trainLoader):
+        if (i == total_batches-1):
+            continue
         batch_file = epoch_file + '/batch_%d' % i
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
         model.train()
         # Variable
         if args.GPU:
-            inputs= Variable(inputs).cuda()
+            inputs = Variable(inputs).cuda()
             target = Variable(target).cuda()
         else:
-            inputs= Variable(inputs)
+            inputs = Variable(inputs)
             target = Variable(target)
-
-        try:   
+        out, h_state= model(inputs, h_state)
+        try:
             out, h_state= model(inputs, h_state)
         except:
             print("h_state is error")
@@ -87,7 +98,7 @@ for epoch in range(num_epoches):
         # 1_1 loss without mask
 #         loss = 0.5 * criterion(song_mag_out,song_mag_tar) + 0.5 * criterion(voice_mag_out,voice_mag_tar) - disc_lambda * ( criterion(song_mag_out,voice_mag_tar) + criterion(voice_mag_out,song_mag_tar))
         # 1_2 loss with  mask
-        loss = 0.5 * criterion(song_mag_mask,song_mag_tar) + 0.5 * criterion(voice_mag_mask,voice_mag_tar) - disc_lambda * ( criterion(song_mag_mask,voice_mag_tar) + criterion(voice_mag_mask,song_mag_tar))
+        loss = 0.5 * criterion(song_mag_mask,song_mag_tar) + 0.5 * criterion(voice_mag_mask, voice_mag_tar) - disc_lambda * (criterion(song_mag_mask, voice_mag_tar) + criterion(voice_mag_mask,song_mag_tar))
     
     
         # 2  Standard_loss
@@ -149,17 +160,14 @@ for epoch in range(num_epoches):
             log = '=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: \033[1;36m%1.4f\033[0m' % (avg_loss)
             print(log)
             logger['train'].write(log)
-            if args.debug:
-                break
-                
-        if args.debug:
-            break
-        
+
     bestModel = False
     if avg_loss < best_loss:
         bestModel = True
         best_loss = avg_loss
         print(' * Best model: \033[1;36m%1.4f\033[0m * ' % best_loss)
+    
+    scheduler.step()
     
     checkpoints.save(epoch, model, criterion, optimizer, bestModel, avg_loss, args)
     
