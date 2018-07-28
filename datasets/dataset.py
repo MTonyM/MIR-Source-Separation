@@ -50,5 +50,5 @@ class iKala_aug(Dataset):
 
 
 def get_dataloader(args):
-    return eval(args.dataset + '(args.len_frame, args.len_hop)')
+    return eval(args.dataset + '(args)')
 
