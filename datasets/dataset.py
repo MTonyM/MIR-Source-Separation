@@ -6,12 +6,13 @@ from audio_op import *
 
 data_root = "/home/maoym/MIR-separation/DL_monaural_separation/pyTorch_version/data"
 
-class data(Dataset):
+class dataList(Dataset):
     def __init__(self, args):
         self.len_frame = args.len_frame
         self.len_hop = args.len_hop
         self.spec_list = torch.load(data_root + "/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (self.len_frame, self.len_hop))
-
+        if args.mode = 0:
+            self.spec_list = self.spec_list [0:int(len(self.spec_list) * args.train_ratio)] 
     def __getitem__(self, idx):
         # load file
         data = torch.load(self.spec_list[idx])

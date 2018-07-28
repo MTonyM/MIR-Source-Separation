@@ -75,7 +75,7 @@ def stftGenerate(args, info):
         print(voice.shape)
         
         
-        if idx <= int(len(records) * args.train_ration ):    
+        if idx <= int(len(records) * args.train_ratio):    
             mode = 'train'
         else:
             mode = 'test'
