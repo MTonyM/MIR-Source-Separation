@@ -162,9 +162,7 @@ for epoch in range(num_epoches):
             logger['train'].write(log)
             if args.debug:
                 break
-        
-        print('write_file compute time:' ,t4-t3)
-        
+                
         if args.debug:
             break
         
