@@ -3,7 +3,9 @@ import random
 import librosa
 import numpy as np
 import torch
-from config import *
+import sys
+sys.path.append('../')
+from options import *
 from utils.audio_op import *
 import math
 # import cfg from configs
@@ -16,8 +18,7 @@ def listGenerate(args):
     wav_folder = "./../../data/wav/" + args.dataset 
     if not os.path.exists(wav_folder):
             os.makedirs(wav_folder)   
-    
-    
+
 #     all_shuffle = torch.randperm(total_num)
 #     all_path = [records[i] for i in all_shuffle]
     info = {

@@ -23,7 +23,8 @@ def get_args():
     ##################  Data Set
     parser.add_argument('--dataset', help='dataset to use.', default='iKala')
     parser.add_argument('--dir', help='path of dataset', default=None)
-
+    parser.add_argument('--data_root', help='raw data path',
+                        default="/home/maoym/MIR-separation/DL_monaural_separation/pyTorch_version/data")
     ######################### audio info/par
     parser.add_argument('--len_frame', help='len_frame', default=1024)
     parser.add_argument('--len_hop', help='len_hop', default=512)
@@ -33,7 +34,7 @@ def get_args():
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--name', help='comma separated list of GPU(s) to use.', default='data')
 
-    #     parser.add_argument('--dir', help="directory of logging", default='/home/maoym/MIR-separation/dataset/Wavfile/train')
+    # parser.add_argument('--dir', help="directory of logging", default='/home/maoym/MIR-separation/dataset/Wavfile/train')
     parser.add_argument('--GPUs', help='comma separated list of GPU(s) to use.', default='1', type=str)
     parser.add_argument('--GPU', help='if use gpu.', default=True, type=str2bool)
     parser.add_argument('--resume', default='../models', type=str, help='Path to checkpoint')

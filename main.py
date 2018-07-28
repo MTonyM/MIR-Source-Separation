@@ -146,7 +146,7 @@ for epoch in range(num_epoches):
 #                     str(soft_gnsdr[1])+"|" + str(soft_gsir[0])+ "|" +str(soft_gsir[1])+"|" + \
 #                     str(soft_gsar[0])+"|"+str(soft_gsar[1])+"\n"
 #====================================================
-            log = '=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: %d' % (avg_loss)
+            log = '=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: \033[1;36m%1.4f\033[0m' % (avg_loss)
             print(log)
             logger['train'].write(log)
             if args.debug:

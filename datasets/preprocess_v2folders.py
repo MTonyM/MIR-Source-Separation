@@ -3,8 +3,10 @@ import random
 import librosa
 import numpy as np
 import torch
-from config import *
-from audio_op import *
+import sys
+sys.path.append('../')
+from options import *
+from utils.audio_op import *
 import math
 # import cfg from configs    
     
