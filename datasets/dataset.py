@@ -10,7 +10,7 @@ class iKala(Dataset):
     def __init__(self, args):
         self.len_frame = args.len_frame
         self.len_hop = args.len_hop
-        self.spec_list = torch.load(data_root + "/spec/iKala_spec_f%d_h%d.pth" % (self.len_frame, self.len_hop))["iKala_specs"]
+        self.spec_list = torch.load(data_root + "/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (self.len_frame, self.len_hop))["iKala_specs"]
 
     def __getitem__(self, idx):
         # load file
