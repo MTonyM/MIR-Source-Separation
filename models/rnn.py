@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.autograd import Variable
-from config import *
+from options import *
 import numpy as np
 
 class RNN(nn.Module):
@@ -30,7 +30,7 @@ class RNN(nn.Module):
 
 def get_model(args):
     in_dim = 3*513 
-    hidden_dim= 1000
+    hidden_dim = 1000
     n_layer = 3
     out_dim = 513
     model = RNN(in_dim, hidden_dim, n_layer, out_dim)
