@@ -9,7 +9,7 @@ from scipy.io import wavfile
 from audio_op import *
 from config import *
 from evaluate import bss_eval_global
-from dataset import get_dataloader
+from datasets.dataset import get_dataloader
 from models.rnn import get_model
 import time
 import importlib
@@ -60,7 +60,7 @@ for epoch in range(num_epoches):
     best_loss = math.inf
     running_loss = 0.0
     for i, (inputs, target, phase) in enumerate(trainLoader):
-        batch_file = epoch_file + '/batch_%d'%i 
+        batch_file = epoch_file + '/batch_%d' % i
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
         model.train()
@@ -81,10 +81,10 @@ for epoch in range(num_epoches):
 
         h_state = Variable(h_state.data)
 
-        pre_win,inputs,next_win = torch.split(inputs, (513,513,513), dim = 2)
+        pre_win, inputs, next_win = torch.split(inputs, (513, 513, 513), dim=2)
         # loss
-        song_mag_out, voice_mag_out = torch.split(out, (513,513), dim = 2)
-        song_mag_tar, voice_mag_tar = torch.split(target, (513,513), dim = 2)
+        song_mag_out, voice_mag_out = torch.split(out, (513, 513), dim=2)
+        song_mag_tar, voice_mag_tar = torch.split(target, (513, 513), dim=2)
 
         # Apply mask 
         song_mag_mask, voice_mag_mask = soft_mask(song_mag_out, voice_mag_out, inputs)
@@ -100,7 +100,6 @@ for epoch in range(num_epoches):
         # 2  Standard_loss
 #             print('compute loss')
 #             loss = criterion(out,target)
-
 
         running_loss += loss
         
@@ -131,10 +130,9 @@ for epoch in range(num_epoches):
 
             song_audio_tar = create_audio_from_spectrogram(song_spec_tar[batch_item,:,:], args)
             voice_audio_tar = create_audio_from_spectrogram(voice_spec_tar[batch_item,:,:], args) 
-            
 
-            song_audio_tar = song_audio_tar[:,np.newaxis]
-            voice_audio_tar =voice_audio_tar[:,np.newaxis]
+            song_audio_tar = song_audio_tar[:, np.newaxis]
+            voice_audio_tar = voice_audio_tar[:, np.newaxis]
             mixed_audio = np.concatenate([voice_audio_tar, song_audio_tar], axis=1) 
                         
             writeWav(os.path.join(batch_file, '%d_%d_song.wav' % (i, batch_item)), 
@@ -151,13 +149,11 @@ for epoch in range(num_epoches):
 #=======================================================
 #             soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, 
 #                                                                voice_audio_tar, song_audio, voice_audio)
-#             t3_4 = time.time()
-#             print('Evaluation time:',t3_4-t3_3)
 #             log = '=> done write :' + '%d_%d' % (i, batch_item) + "|" +str(soft_gnsdr[0])+ "|" + \
 #                     str(soft_gnsdr[1])+"|" + str(soft_gsir[0])+ "|" +str(soft_gsir[1])+"|" + \
 #                     str(soft_gsar[0])+"|"+str(soft_gsar[1])+"\n"
 #====================================================
-            log='=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: %d' % (avg_loss)
+            log = '=> done write :' + '%d_%d' % (i, batch_item) + " | "+ 'avg_loss: %d' % (avg_loss)
             print(log)
             logger['train'].write(log)
             if args.debug:
@@ -172,6 +168,5 @@ for epoch in range(num_epoches):
         best_loss = avg_loss
         print(' * Best model: \033[1;36m%1.4f\033[0m * ' % best_loss)
     
-    checkpoints.save(epoch, model, criterion, optimizer, bestModel, avg_loss ,args)        
+    checkpoints.save(epoch, model, criterion, optimizer, bestModel, avg_loss, args)
     
-print(' * Finished Err: \033[1;36m%1.4f\033[0m * ' % bestLoss)

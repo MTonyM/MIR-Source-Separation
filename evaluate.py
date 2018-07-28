@@ -42,7 +42,6 @@ import collections
 import itertools
 import warnings
 
-
 # The maximum allowable number of sources (prevents insane computational load)
 MAX_SOURCES = 100
 
@@ -221,7 +220,7 @@ def bss_eval_sources(reference_sources, estimated_sources,
 
 
 def bss_eval_sources_framewise(reference_sources, estimated_sources,
-                               window=30*44100, hop=15*44100,
+                               window=30 * 44100, hop=15 * 44100,
                                compute_permutation=False):
     """Framewise computation of bss_eval_sources
     Please be aware that this function does not compute permutations (by
@@ -389,7 +388,7 @@ def bss_eval_images(reference_sources, estimated_sources,
     # If empty matrices were supplied, return empty lists (special case)
     if reference_sources.size == 0 or estimated_sources.size == 0:
         return np.array([]), np.array([]), np.array([]), \
-                         np.array([]), np.array([])
+               np.array([]), np.array([])
 
     # determine size parameters
     nsrc = estimated_sources.shape[0]
@@ -417,7 +416,7 @@ def bss_eval_images(reference_sources, estimated_sources,
                         512
                     )
                 sdr[jest, jtrue], isr[jest, jtrue], \
-                    sir[jest, jtrue], sar[jest, jtrue] = \
+                sir[jest, jtrue], sar[jest, jtrue] = \
                     _bss_image_crit(s_true, e_spat, e_interf, e_artif)
 
         # select the best ordering
@@ -456,7 +455,7 @@ def bss_eval_images(reference_sources, estimated_sources,
 
 
 def bss_eval_images_framewise(reference_sources, estimated_sources,
-                              window=30*44100, hop=15*44100,
+                              window=30 * 44100, hop=15 * 44100,
                               compute_permutation=False):
     """Framewise computation of bss_eval_images
     Please be aware that this function does not compute permutations (by
@@ -647,7 +646,7 @@ def _project(reference_sources, estimated_source, flen):
     reference_sources = np.hstack((reference_sources,
                                    np.zeros((nsrc, flen - 1))))
     estimated_source = np.hstack((estimated_source, np.zeros(flen - 1)))
-    n_fft = int(2**np.ceil(np.log2(nsampl + flen - 1.)))
+    n_fft = int(2 ** np.ceil(np.log2(nsampl + flen - 1.)))
     sf = scipy.fftpack.fft(reference_sources, n=n_fft, axis=1)
     sef = scipy.fftpack.fft(estimated_source, n=n_fft)
     # inner products between delayed versions of reference_sources
@@ -658,15 +657,15 @@ def _project(reference_sources, estimated_source, flen):
             ssf = np.real(scipy.fftpack.ifft(ssf))
             ss = toeplitz(np.hstack((ssf[0], ssf[-1:-flen:-1])),
                           r=ssf[:flen])
-            G[i * flen: (i+1) * flen, j * flen: (j+1) * flen] = ss
-            G[j * flen: (j+1) * flen, i * flen: (i+1) * flen] = ss.T
+            G[i * flen: (i + 1) * flen, j * flen: (j + 1) * flen] = ss
+            G[j * flen: (j + 1) * flen, i * flen: (i + 1) * flen] = ss.T
     # inner products between estimated_source and delayed versions of
     # reference_sources
     D = np.zeros(nsrc * flen)
     for i in range(nsrc):
         ssef = sf[i] * np.conj(sef)
         ssef = np.real(scipy.fftpack.ifft(ssef))
-        D[i * flen: (i+1) * flen] = np.hstack((ssef[0], ssef[-1:-flen:-1]))
+        D[i * flen: (i + 1) * flen] = np.hstack((ssef[0], ssef[-1:-flen:-1]))
 
     # Computing projection
     # Distortion filters
@@ -692,15 +691,15 @@ def _project_images(reference_sources, estimated_source, flen, G=None):
     nsampl = reference_sources.shape[1]
     nchan = reference_sources.shape[2]
     reference_sources = np.reshape(np.transpose(reference_sources, (2, 0, 1)),
-                                   (nchan*nsrc, nsampl), order='F')
+                                   (nchan * nsrc, nsampl), order='F')
 
     # computing coefficients of least squares problem via FFT ##
     # zero padding and FFT of input data
     reference_sources = np.hstack((reference_sources,
-                                   np.zeros((nchan*nsrc, flen - 1))))
+                                   np.zeros((nchan * nsrc, flen - 1))))
     estimated_source = \
         np.hstack((estimated_source.transpose(), np.zeros((nchan, flen - 1))))
-    n_fft = int(2**np.ceil(np.log2(nsampl + flen - 1.)))
+    n_fft = int(2 ** np.ceil(np.log2(nsampl + flen - 1.)))
     sf = scipy.fftpack.fft(reference_sources, n=n_fft, axis=1)
     sef = scipy.fftpack.fft(estimated_source, n=n_fft)
 
@@ -709,25 +708,25 @@ def _project_images(reference_sources, estimated_source, flen, G=None):
         saveg = False
         G = np.zeros((nchan * nsrc * flen, nchan * nsrc * flen))
         for i in range(nchan * nsrc):
-            for j in range(i+1):
+            for j in range(i + 1):
                 ssf = sf[i] * np.conj(sf[j])
                 ssf = np.real(scipy.fftpack.ifft(ssf))
                 ss = toeplitz(np.hstack((ssf[0], ssf[-1:-flen:-1])),
                               r=ssf[:flen])
-                G[i * flen: (i+1) * flen, j * flen: (j+1) * flen] = ss
-                G[j * flen: (j+1) * flen, i * flen: (i+1) * flen] = ss.T
+                G[i * flen: (i + 1) * flen, j * flen: (j + 1) * flen] = ss
+                G[j * flen: (j + 1) * flen, i * flen: (i + 1) * flen] = ss.T
     else:  # avoid recomputing G (only works if no permutation is desired)
         saveg = True  # return G
         if np.all(G == 0):  # only compute G if passed as 0
             G = np.zeros((nchan * nsrc * flen, nchan * nsrc * flen))
             for i in range(nchan * nsrc):
-                for j in range(i+1):
+                for j in range(i + 1):
                     ssf = sf[i] * np.conj(sf[j])
                     ssf = np.real(scipy.fftpack.ifft(ssf))
                     ss = toeplitz(np.hstack((ssf[0], ssf[-1:-flen:-1])),
                                   r=ssf[:flen])
-                    G[i * flen: (i+1) * flen, j * flen: (j+1) * flen] = ss
-                    G[j * flen: (j+1) * flen, i * flen: (i+1) * flen] = ss.T
+                    G[i * flen: (i + 1) * flen, j * flen: (j + 1) * flen] = ss
+                    G[j * flen: (j + 1) * flen, i * flen: (i + 1) * flen] = ss.T
 
     # inner products between estimated_source and delayed versions of
     # reference_sources
@@ -736,15 +735,15 @@ def _project_images(reference_sources, estimated_source, flen, G=None):
         for i in range(nchan):
             ssef = sf[k] * np.conj(sef[i])
             ssef = np.real(scipy.fftpack.ifft(ssef))
-            D[k * flen: (k+1) * flen, i] = \
+            D[k * flen: (k + 1) * flen, i] = \
                 np.hstack((ssef[0], ssef[-1:-flen:-1])).transpose()
 
     # Computing projection
     # Distortion filters
     try:
-        C = np.linalg.solve(G, D).reshape(flen, nchan*nsrc, nchan, order='F')
+        C = np.linalg.solve(G, D).reshape(flen, nchan * nsrc, nchan, order='F')
     except np.linalg.linalg.LinAlgError:
-        C = np.linalg.lstsq(G, D)[0].reshape(flen, nchan*nsrc, nchan,
+        C = np.linalg.lstsq(G, D)[0].reshape(flen, nchan * nsrc, nchan,
                                              order='F')
     # Filtering
     sproj = np.zeros((nchan, nsampl + flen - 1))
@@ -765,9 +764,9 @@ def _bss_source_crit(s_true, e_spat, e_interf, e_artif):
     """
     # energy ratios
     s_filt = s_true + e_spat
-    sdr = _safe_db(np.sum(s_filt**2), np.sum((e_interf + e_artif)**2))
-    sir = _safe_db(np.sum(s_filt**2), np.sum(e_interf**2))
-    sar = _safe_db(np.sum((s_filt + e_interf)**2), np.sum(e_artif**2))
+    sdr = _safe_db(np.sum(s_filt ** 2), np.sum((e_interf + e_artif) ** 2))
+    sir = _safe_db(np.sum(s_filt ** 2), np.sum(e_interf ** 2))
+    sar = _safe_db(np.sum((s_filt + e_interf) ** 2), np.sum(e_artif ** 2))
     return (sdr, sir, sar)
 
 
@@ -776,10 +775,10 @@ def _bss_image_crit(s_true, e_spat, e_interf, e_artif):
     filtered true source, spatial error, interference and artifacts.
     """
     # energy ratios
-    sdr = _safe_db(np.sum(s_true**2), np.sum((e_spat+e_interf+e_artif)**2))
-    isr = _safe_db(np.sum(s_true**2), np.sum(e_spat**2))
-    sir = _safe_db(np.sum((s_true+e_spat)**2), np.sum(e_interf**2))
-    sar = _safe_db(np.sum((s_true+e_spat+e_interf)**2), np.sum(e_artif**2))
+    sdr = _safe_db(np.sum(s_true ** 2), np.sum((e_spat + e_interf + e_artif) ** 2))
+    isr = _safe_db(np.sum(s_true ** 2), np.sum(e_spat ** 2))
+    sir = _safe_db(np.sum((s_true + e_spat) ** 2), np.sum(e_interf ** 2))
+    sar = _safe_db(np.sum((s_true + e_spat + e_interf) ** 2), np.sum(e_artif ** 2))
     return (sdr, isr, sir, sar)
 
 

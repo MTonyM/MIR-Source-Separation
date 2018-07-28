@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import importlib
 
+
 def setup(args, checkpoint, model):
     criterion = None
     criterionHandler = importlib.import_module('models.' + args.model + '-criterion')
