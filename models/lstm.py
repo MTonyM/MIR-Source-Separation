@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.autograd import Variable
-from config import *
+from options import *
 
 class Rnn(nn.Module):
     def __init__(self, in_dim, hidden_dim, n_layer, out_dim):
