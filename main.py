@@ -6,6 +6,8 @@ from options import *
 from datasets.dataset import get_dataloader
 import importlib
 import math
+from utils.progbar import progbar
+import time
 
 ####################################################
 models = importlib.import_module('models.init')
@@ -57,9 +59,10 @@ for epoch in range(epoch_start, num_epoches):
     epoch_file = os.path.join('../results', args.resume, 'epoch_%d' % epoch)
     if not os.path.exists(epoch_file):
         os.makedirs(epoch_file)
-
+    pbar = progbar(len(trainLoader), width=50)
     running_loss = 0.0
     for i, (inputs, target, phase) in enumerate(trainLoader):
+        time_start = time.time()
         batch_file = epoch_file + '/batch_%d' % i
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
@@ -135,7 +138,8 @@ for epoch in range(epoch_start, num_epoches):
                      args.sample_rate, song_audio_mask)
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio_mask)
-
+        run_time = time_start - time.time()
+        pbar.update(i, [("batch", i), ("loss", avg_loss), ("time", run_time)])
     log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
     logger['train'].write(log)
     print(log)
@@ -150,7 +154,9 @@ for epoch in range(epoch_start, num_epoches):
 
     """ Test now """
     running_loss = 0.0
+    pbar_val = progbar(len(testLoader), width=50)
     for i, (inputs, target, phase) in enumerate(testLoader):
+        time_start = time.time()
         batch_file = epoch_file + '/test_batch_%d' % i
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
@@ -223,6 +229,9 @@ for epoch in range(epoch_start, num_epoches):
                      args.sample_rate, song_audio_mask)
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio_mask)
+
+        run_time = time_start - time.time()
+        pbar.update(i, [("batch", i), ("loss", avg_loss), ("time", run_time)])
 
     log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
     logger['test'].write(log)
