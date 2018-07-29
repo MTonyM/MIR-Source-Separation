@@ -74,7 +74,7 @@ for epoch in range(epoch_start, num_epoches):
         out, h_state = model(inputs, h_state)
         h_state = Variable(h_state.data)
 
-        pre_win, inputs, next_win = torch.split(inputs, (513, 513, 513), dim=2)
+        _, inputs, _ = torch.split(inputs, (513, 513, 513), dim=2)
         # loss
         song_mag_out, voice_mag_out = torch.split(out, (513, 513), dim=2)
         song_mag_tar, voice_mag_tar = torch.split(target, (513, 513), dim=2)
