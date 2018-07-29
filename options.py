@@ -21,8 +21,8 @@ def get_args():
     parser.add_argument('--aug', help='wheter do data augmentation', default=True)
     parser.add_argument('--LRDecay', default='exp', type=str, help='LRDecay method')
     parser.add_argument('--LRDParam', default=3, type=int, help='param for learning rate decay')
-    parser.add_argument('--weightDecay',default=1e-4,type=float,help='weight decay')
-    parser.add_argument('--momentum',default=0.9,type=float, help='momentum')
+    parser.add_argument('--weightDecay', default=1e-4, type=float, help='weight decay')
+    parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
     ##################  Data Set
     parser.add_argument('--dataset', help='dataset to use.', default='iKala')
     parser.add_argument('--dir', help='path of dataset', default=None)
@@ -48,7 +48,6 @@ def get_args():
     parser.add_argument('--saveEpoch', default=5, type=int, help='saving at least # epochs')
     parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.9)
 
-    
     args = parser.parse_args()
 
     ###################s Data set path
