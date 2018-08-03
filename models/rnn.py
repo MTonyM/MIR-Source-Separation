@@ -4,7 +4,6 @@ from torch.autograd import Variable
 from options import *
 import numpy as np
 
-
 class RNN(nn.Module):
     def __init__(self, in_dim, hidden_dim, n_layer, out_dim):
         super(RNN, self).__init__()

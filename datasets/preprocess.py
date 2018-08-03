@@ -15,8 +15,10 @@ import math
 
 def listGenerate(args):
     records = os.listdir(args.dir)
-    records.remove('.ipynb_checkpoints')
-
+    try:
+        records.remove('.ipynb_checkpoints')
+    except:
+        pass
     total_num = len(records)
     wav_folder = os.path.join(args.data_root, "wav", args.dataset)
     if not os.path.exists(wav_folder):
@@ -58,13 +60,14 @@ def stftGenerate(args, info):
 
         # load records
         record_path = os.path.join(base_dir, records[idx])
-        sound, sample_rate = librosa.load(record_path, mono=False, sr=44100)
+        sound, sample_rate = librosa.load(record_path, mono=False, sr=args.sample_rate)
         song, voice = sound[0, :], sound[1, :]
 
         # resample + mix
-        song = librosa.resample(song, sample_rate, 16000)
-        voice = librosa.resample(voice, sample_rate, 16000)
-        print(voice.shape)
+        if sample_rate != 16000:
+            song = librosa.resample(song, sample_rate, 16000)
+            voice = librosa.resample(voice, sample_rate, 16000)
+ 
 
         for shift_len in shift_num:
             shift_len = shift_len * 4000
@@ -100,7 +103,7 @@ def stftGenerate(args, info):
             all_spec.append(file_path)
 
     info = {
-        "iKala_specs": all_spec
+        args.dataset + "_specs": all_spec
     }
     torch.save(info, os.path.join(args.data_root, "info", args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop)))
 

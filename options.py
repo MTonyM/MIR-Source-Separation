@@ -14,7 +14,9 @@ def get_args():
     parser.add_argument('--augment', help='if do augmentation', default=True, type=str2bool)
     parser.add_argument('--debug', help='if debug', default=False, type=str2bool)
     parser.add_argument('--batch_size', help='batch size', default=50, type=int)
+    
     ######################### train par
+    parser.add_argument('--new', help='begin new train', default=False)
     parser.add_argument('--num_epoches', help='epoches num', default=5, type=int)
     parser.add_argument('--epochNum', default=-1, type=int, help='0=retrain | -1=latest | -2=best', choices=[0, -1, -2])
     parser.add_argument('--learning_rate', help='learning rate', default=1e-3)
@@ -23,6 +25,7 @@ def get_args():
     parser.add_argument('--LRDParam', default=3, type=int, help='param for learning rate decay')
     parser.add_argument('--weightDecay', default=1e-4, type=float, help='weight decay')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+    
     ##################  Data Set
     parser.add_argument('--dataset', help='dataset to use.', default='iKala')
     parser.add_argument('--dir', help='path of dataset', default=None)
@@ -46,13 +49,17 @@ def get_args():
 
     parser.add_argument('--mode', help='0: train 1:test', default=0)
     parser.add_argument('--saveEpoch', default=5, type=int, help='saving at least # epochs')
-    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.9)
+    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.172)
 
     args = parser.parse_args()
 
     ###################s Data set path
     if args.dataset == 'iKala':
         args.dir = '/home/maoym/MIR-separation/dataset/iKala/Wavfile'
+        args.sample_rate = 44100
+    elif args.dataset == 'sub_MIR_1K':
+        args.dir = '/home/maoym/MIR-separation/dataset/sub_MIR_1K/all'
+        args.sample_rate =16000
     if args.aug:
         args.dataset = args.dataset + '_aug'
 
