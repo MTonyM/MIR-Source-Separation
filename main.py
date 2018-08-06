@@ -21,12 +21,9 @@ args = get_args()
 num_epoches = args.num_epoches
 learning_rate = args.learning_rate
 batch_size = args.batch_size
-trainLoader, testLoader = get_dataloader(args)
-if args.new:
-    checkpoint = None
-else:    
-    print('=> Checking checkpoints')
-    checkpoint = checkpoints.load(args)
+trainLoader, testLoader = get_dataloader(args)    
+print('=> Checking checkpoints')
+checkpoint = checkpoints.load(args)
 
 # create model
 model, optimState = models.setup(args, checkpoint)
@@ -48,7 +45,8 @@ if checkpoint != None:
     print('Previous loss: \033[1;36m%1.4f\033[0m' % bestLoss)
 
 logger = {'train': open(os.path.join(args.resume, 'train.log'), 'a+'),
-          'val': open(os.path.join(args.resume, 'test.log'), 'a+')}
+          'val': open(os.path.join(args.resume, 'val.log'), 'a+'),
+         'test': open(os.path.join(args.resume, 'test.log'), 'a+')}
 
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.LRDParam, gamma=0.1, last_epoch=epoch_start - 1)
 
@@ -233,7 +231,7 @@ for epoch in range(epoch_start, num_epoches):
             log = '=> done write :' + '%d_%d' % (i, batch_item) + "| GNSDR 0: " +str(soft_gnsdr[0])+ " | GNSDR 1: " + \
                     str(soft_gnsdr[1])+" | GSIR 0: " + str(soft_gsir[0])+ " | GSIR 1: " +str(soft_gsir[1])+" | GSAR 0: " + \
                     str(soft_gsar[0])+" | GSAR 1: "+str(soft_gsar[1])+"\n"
-            print(log)
+            logger['test'].write(log)
     log = '[{}/{}] Loss: {:.6f}\n'.format(epoch + 1, num_epoches, avg_loss)
     logger['val'].write(log)
     print(log)

@@ -16,14 +16,13 @@ def get_args():
     parser.add_argument('--batch_size', help='batch size', default=50, type=int)
     
     ######################### train par
-    parser.add_argument('--new', help='begin new train', default=False)
     parser.add_argument('--num_epoches', help='epoches num', default=5, type=int)
     parser.add_argument('--epochNum', default=-1, type=int, help='0=retrain | -1=latest | -2=best', choices=[0, -1, -2])
     parser.add_argument('--learning_rate', help='learning rate', default=1e-3)
     parser.add_argument('--aug', help='wheter do data augmentation', default=True)
     parser.add_argument('--LRDecay', default='exp', type=str, help='LRDecay method')
     parser.add_argument('--LRDParam', default=3, type=int, help='param for learning rate decay')
-    parser.add_argument('--weightDecay', default=1e-4, type=float, help='weight decay')
+    parser.add_argument('--weightDecay', default=3e-5, type=float, help='weight decay')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
     
     ##################  Data Set
@@ -31,6 +30,8 @@ def get_args():
     parser.add_argument('--dir', help='path of dataset', default=None)
     parser.add_argument('--data_root', help='raw data path',
                         default="/home/maoym/MIR-separation/DL_monaural_separation/pyTorch_version/data")
+    
+    
     ######################### audio info/par
     parser.add_argument('--len_frame', help='len_frame', default=1024)
     parser.add_argument('--len_hop', help='len_hop', default=512)
@@ -49,7 +50,7 @@ def get_args():
 
     parser.add_argument('--mode', help='0: train 1:test', default=0)
     parser.add_argument('--saveEpoch', default=5, type=int, help='saving at least # epochs')
-    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.172)
+    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.7)
 
     args = parser.parse_args()
 
