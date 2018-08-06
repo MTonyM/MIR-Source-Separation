@@ -1,4 +1,3 @@
-
 from torch import optim
 from torch.autograd import Variable
 import numpy as np
