@@ -83,13 +83,13 @@ class progbar(object):
             for k in self.unique_values:
                 info += '  %s:' % k
                 if isinstance(self.sum_values[k], list):
-                    avg = np.mean(self.sum_values[k][0] / max(1, self.sum_values[k][1]))
+                    avg = self.sum_values[k][0] / max(1, self.sum_values[k][1])
                     if abs(avg) > 1e-3:
                         info += ' %.4f' % avg
                     else:
                         info += ' %.4e' % avg
                 else:
-                    info += ' %s' % self.sum_values[k]
+                        info += ' %s' % self.sum_values[k]
 
             self.total_width += len(info)
             if prev_total_width > self.total_width:

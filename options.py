@@ -39,7 +39,7 @@ def get_args():
 
     parser.add_argument('--log_dir', help="directory of logging", default=None)
     parser.add_argument('--train', action='store_true')
-    parser.add_argument('--name', help='comma separated list of GPU(s) to use.', default='data')
+    parser.add_argument('--name', help='TBD.', default='data')
 
     # parser.add_argument('--dir', help="directory of logging", default='/home/maoym/MIR-separation/dataset/Wavfile/train')
     parser.add_argument('--GPUs', help='comma separated list of GPU(s) to use.', default='1', type=str)
