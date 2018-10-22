@@ -105,8 +105,8 @@ def stftGenerate(args, info):
     info = {
         args.dataset + "_specs": all_spec
     }
-    torch.save(info, os.path.join(args.data_root, "info", args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop)))
-
+#     torch.save(info, os.path.join(args.data_root, "info", args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop))) #10.21
+    torch.save(info, "./../../data/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop))
 
 if __name__ == '__main__':
     args = get_args()

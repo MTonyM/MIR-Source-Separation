@@ -9,6 +9,26 @@ import math
 from utils.progbar import progbar
 import time
 from utils.evaluate import *
+import datetime
+
+
+#############################
+# Fix the error ' AttributeError: Can't get attribute '_rebuild_tensor_v2' on <module 'torch._utils' from '/root/miniconda3/lib/python3.6/site-packages/torch/_utils.py'> '  by fix version compatibility 
+#Doesn't work so stop check point loading for now
+# import torch._utils
+# try:
+#     torch._utils._rebuild_tensor_v2
+# except AttributeError:
+#     def _rebuild_tensor_v2(storage, storage_offset, size, stride, requires_grad, backward_hooks):
+#         tensor = torch._utils._rebuild_tensor(storage, storage_offset, size, stride)
+#         tensor.requires_grad = requires_grad
+#         tensor._backward_hooks = backward_hooks
+#         return tensor
+#     torch._utils._rebuild_tensor_v2 = _rebuild_tensor_v2
+#     print('Tried fix')
+###########################
+
+
 
 ####################################################
 models = importlib.import_module('models.init')
@@ -22,9 +42,9 @@ num_epoches = args.num_epoches
 learning_rate = args.learning_rate
 batch_size = args.batch_size
 trainLoader, testLoader = get_dataloader(args)    
-print('=> Checking checkpoints')
-checkpoint = checkpoints.load(args)
-
+# print('=> Checking checkpoints')
+# checkpoint = checkpoints.load(args)
+checkpoint = None
 # create model
 model, optimState = models.setup(args, checkpoint)
 if args.GPU:
@@ -48,12 +68,24 @@ logger = {'train': open(os.path.join(args.resume, 'train.log'), 'a+'),
           'val': open(os.path.join(args.resume, 'val.log'), 'a+'),
          'test': open(os.path.join(args.resume, 'test.log'), 'a+')}
 
+nowTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+init_log = '\n\n\n\n' + args.dataset + nowTime + '\n\n\n\n'  
+logger['train'].write(init_log)
+
+
+
+
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.LRDParam, gamma=0.1, last_epoch=epoch_start - 1)
 
 # RNN
 h_state = None
 avg_loss = math.inf
 best_loss = math.inf
+
+
+
+
+
 
 for epoch in range(epoch_start, num_epoches):
     epoch_file = os.path.join('../results_'+ args.dataset,'epoch_%d' % epoch)
@@ -76,19 +108,21 @@ for epoch in range(epoch_start, num_epoches):
             target = Variable(target)
         out, h_state = model(inputs, h_state)
         h_state = Variable(h_state.data)
-
-        _, inputs, _ = torch.split(inputs, (513, 513, 513), dim=2)
+        _, inputs, _ = torch.split(inputs, 513 , dim=2)
         # loss
-        song_mag_out, voice_mag_out = torch.split(out, (513, 513), dim=2)
-        song_mag_tar, voice_mag_tar = torch.split(target, (513, 513), dim=2)
+        song_mag_out, voice_mag_out = torch.split(out, 513, dim=2)
+        song_mag_tar, voice_mag_tar = torch.split(target, 513 , dim=2)
 
         # Apply mask 
         song_mag_mask, voice_mag_mask = soft_mask(song_mag_out, voice_mag_out, inputs)
 
         # 1 Disc_loss
         disc_lambda = 0.05
+        
         # 1_1 loss without mask
         #         loss = 0.5 * criterion(song_mag_out,song_mag_tar) + 0.5 * criterion(voice_mag_out,voice_mag_tar) - disc_lambda * ( criterion(song_mag_out,voice_mag_tar) + criterion(voice_mag_out,song_mag_tar))
+        
+        
         # 1_2 loss with  mask
         loss = 0.5 * criterion(song_mag_mask, song_mag_tar) + 0.5 * criterion(voice_mag_mask,voice_mag_tar) - disc_lambda * (
                        criterion(song_mag_mask, voice_mag_tar) + criterion(voice_mag_mask, song_mag_tar))
@@ -105,14 +139,14 @@ for epoch in range(epoch_start, num_epoches):
         avg_loss = running_loss / (batch_size * i + 1e-4)
 
         phase = phase.numpy()
+#         print(type(song_mag_out.cpu().detach().data))
+        song_spec_out = merge_mag_phase(song_mag_out.cpu().detach().data.numpy(), phase)
+        voice_spec_out = merge_mag_phase(voice_mag_out.cpu().detach().data.numpy(), phase)
+        song_spec_mask = merge_mag_phase(song_mag_mask.cpu().detach().data.numpy(), phase)
+        voice_spec_mask = merge_mag_phase(voice_mag_mask.cpu().detach().data.numpy(), phase)
 
-        song_spec_out = merge_mag_phase(song_mag_out.cpu().detach().numpy(), phase)
-        voice_spec_out = merge_mag_phase(voice_mag_out.cpu().detach().numpy(), phase)
-        song_spec_mask = merge_mag_phase(song_mag_mask.cpu().detach().numpy(), phase)
-        voice_spec_mask = merge_mag_phase(voice_mag_mask.cpu().detach().numpy(), phase)
-
-        song_spec_tar = merge_mag_phase(song_mag_tar.cpu().detach().numpy(), phase)
-        voice_spec_tar = merge_mag_phase(voice_mag_tar.cpu().detach().numpy(), phase)
+        song_spec_tar = merge_mag_phase(song_mag_tar.cpu().detach().data.numpy(), phase)
+        voice_spec_tar = merge_mag_phase(voice_mag_tar.cpu().detach().data.numpy(), phase)
 
         for batch_item in range(batch_size):
             song_audio = create_audio_from_spectrogram(song_spec_out[batch_item, :, :], args)

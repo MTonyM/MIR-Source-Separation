@@ -1,3 +1,6 @@
+# v2 include test/train set separation
+
+
 import os
 import random
 import librosa
@@ -16,7 +19,10 @@ import math
 
 def listGenerate(args):
     records = os.listdir(args.dir)
-    records.remove('.ipynb_checkpoints')
+    try:
+        records.remove('.ipynb_checkpoints')
+    except:
+        pass
     total_num = len(records)
     ####### check folder exist
     wav_folder = "./../../data/wav/" + args.dataset
@@ -30,7 +36,7 @@ def listGenerate(args):
         "total_num": total_num,
         "file_name": records
     }
-    torch.save(info, "./../../data/wav" + args.dataset + "_origin.pth")
+    torch.save(info, os.path.join(args.data_root, "wav", args.dataset + "_origin.pth"))
     return info
 
 
@@ -122,7 +128,7 @@ def stftGenerate(args, info):
                 "wav_name": wav_name
             }
 
-            file_path = os.path.join("./../../data/pre/" + args.dataset + "/" + mode,
+            file_path = os.path.join("/root/MIR-separation/DL_monaural_separation/pyTorch_version/data/pre/" + args.dataset + "/" + mode,
                                      wav_name + "_spec_shiftStep_%d.pth" % (shift_len))
 
             torch.save(data, file_path)
@@ -133,8 +139,9 @@ def stftGenerate(args, info):
         "iKala_specs": all_spec
     }
 
-    torch.save(info, "./../../data/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop))
-
+#     torch.save(info, "./../../data/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop))
+    torch.save(info, os.path.join(args.data_root, "info", args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop)))
+    
 
 if __name__ == '__main__':
     args = get_args()

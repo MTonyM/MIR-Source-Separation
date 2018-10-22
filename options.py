@@ -19,17 +19,17 @@ def get_args():
     parser.add_argument('--num_epoches', help='epoches num', default=5, type=int)
     parser.add_argument('--epochNum', default=-1, type=int, help='0=retrain | -1=latest | -2=best', choices=[0, -1, -2])
     parser.add_argument('--learning_rate', help='learning rate', default=1e-3)
-    parser.add_argument('--aug', help='wheter do data augmentation', default=True)
+    parser.add_argument('--aug', help='if data augmentation', default=True)
     parser.add_argument('--LRDecay', default='exp', type=str, help='LRDecay method')
     parser.add_argument('--LRDParam', default=3, type=int, help='param for learning rate decay')
     parser.add_argument('--weightDecay', default=3e-5, type=float, help='weight decay')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
     
     ##################  Data Set
-    parser.add_argument('--dataset', help='dataset to use.', default='iKala')
+    parser.add_argument('--dataset', help='dataset to use.', default='sub_MIR_1K')
     parser.add_argument('--dir', help='path of dataset', default=None)
     parser.add_argument('--data_root', help='raw data path',
-                        default="/home/maoym/MIR-separation/DL_monaural_separation/pyTorch_version/data")
+                        default="/root/MIR-separation/DL_monaural_separation/pyTorch_version/data")
     
     
     ######################### audio info/par
@@ -56,10 +56,10 @@ def get_args():
 
     ###################s Data set path
     if args.dataset == 'iKala':
-        args.dir = '/home/maoym/MIR-separation/dataset/iKala/Wavfile'
+        args.dir = '/root/MIR-separation/dataset/iKala/Wavfile'
         args.sample_rate = 44100
     elif args.dataset == 'sub_MIR_1K':
-        args.dir = '/home/maoym/MIR-separation/dataset/sub_MIR_1K/all'
+        args.dir = '/root/MIR-separation/dataset/sub_MIR_1K/all'
         args.sample_rate =16000
     if args.aug:
         args.dataset = args.dataset + '_aug'

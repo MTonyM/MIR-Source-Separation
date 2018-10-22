@@ -3,11 +3,13 @@ import torch
 from scipy.io import wavfile
 import librosa
 import numpy as np
+import torch
 
 
 def soft_mask(voice_mag, song_mag, mix_mag):
-    voice_mag = abs(voice_mag)
-    song_mag = abs(song_mag)
+#     print(type(voice_mag))
+    voice_mag = torch.abs(voice_mag)
+    song_mag = torch.abs(song_mag)
     mask_value = voice_mag / (voice_mag + song_mag + 1e-5)
     voice_mag_new = mask_value * mix_mag
     song_mag_new = (1 - mask_value) * mix_mag
