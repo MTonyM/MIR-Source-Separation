@@ -58,6 +58,9 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate, betas=(args.momentu
 if optimState != None:
     optimizer.load_state_dict(optimState)
 # **************************
+
+nowTime = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+result_dir = '../results/' + args.dataset + '_' + args.model+ '_' + nowTime
 bestLoss = 0.0
 epoch_start = 0
 if checkpoint != None:
@@ -65,13 +68,25 @@ if checkpoint != None:
     bestLoss = checkpoint['loss']
     print('Previous loss: \033[1;36m%1.4f\033[0m' % bestLoss)
 
-logger = {'train': open(os.path.join(args.resume, 'train.log'), 'a+'),
-          'val': open(os.path.join(args.resume, 'val.log'), 'a+'),
-         'test': open(os.path.join(args.resume, 'test.log'), 'a+')}
+    
 
-nowTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-init_log = '\n\n\n\n' + args.dataset + nowTime + '\n\n\n\n'  
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)    
+    
+logger = {'train': open(os.path.join(result_dir, 'train.log'), 'a+'),
+       'val': open(os.path.join(result_dir, 'val.log'), 'a+'),
+       'test': open(os.path.join(result_dir, 'test.log'), 'a+'),
+       'test_mask': open(os.path.join(result_dir, 'test_mask.log'), 'a+'),
+       'info':open(os.path.join(result_dir, 'info.log'), 'a+')}
+# Initial Log File 
+init_log = args.dataset + nowTime + '\n'  
 logger['train'].write(init_log)
+logger['test'].write(init_log)
+logger['val'].write(init_log)
+logger['info'].write(init_log)
+logger['test_mask'].write(init_log)
+info_log = nowTime + '\n' + 'DataSet: ' + args.dataset + '\n' + 'Model: ' + args.model + '\n' + 'Train ratio: ' + str(args.train_ratio) + '\n'      
+logger['info'].write(info_log)
 
 
 
@@ -89,18 +104,26 @@ best_loss = math.inf
 
 
 for epoch in range(epoch_start, num_epoches):
-    epoch_file = os.path.join('../results_'+ args.dataset,'epoch_%d' % epoch)
+    log = 'epoch Num:' + str(epoch)+'\n'
+    print(log)
+    logger['train'].write(log)
+    logger['test'].write(log)
+    logger['test_mask'].write(log)
+    epoch_file = os.path.join( result_dir , 'epoch_%d' % epoch)
+    
     if not os.path.exists(epoch_file):
         os.makedirs(epoch_file)
     pbar = progbar(len(trainLoader)*batch_size, width=50)
     running_loss = 0.0
     for i, (inputs, target, phase) in enumerate(trainLoader):
 #         print(i,'done')
+        if args.debug and i>1:
+            break
         batch_file = epoch_file + '/train_batch_%d' % i
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
         model.train()
-        # Variable
+        # Variable 
         if args.GPU:
             inputs = Variable(inputs).cuda()
             target = Variable(target).cuda()
@@ -170,18 +193,24 @@ for epoch in range(epoch_start, num_epoches):
 #             song_audio_tar = song_audio_tar[:, np.newaxis]
 #             voice_audio_tar = voice_audio_tar[:, np.newaxis]
             mixed_audio = 0.5 * voice_audio_tar + 0.5 * song_audio_tar 
-
+            writeWav(os.path.join(batch_file, '%d_%d_song_tar.wav' % (i, batch_item)),
+                     args.sample_rate, song_audio_tar)
+            writeWav(os.path.join(batch_file, '%d_%d_voice_tar.wav' % (i, batch_item)),
+                     args.sample_rate, voice_audio_tar)        
+        
             writeWav(os.path.join(batch_file, '%d_%d_song.wav' % (i, batch_item)),
                      args.sample_rate, song_audio)
             writeWav(os.path.join(batch_file, '%d_%d_voice.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio)
-            writeWav(os.path.join(batch_file, '%d_%d_mixed.wav' % (i, batch_item)),
-                     args.sample_rate, mixed_audio)
+
             writeWav(os.path.join(batch_file, '%d_%d_song_mask.wav' % (i, batch_item)),
                      args.sample_rate, song_audio_mask)
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio_mask)
+            
             pbar.update(i*batch_size + batch_item + 1, [('avg_loss', float(loss) / (batch_size + 1e-4)),])
+
+                
         del loss
         del song_mag_out
         del voice_mag_out
@@ -204,9 +233,11 @@ for epoch in range(epoch_start, num_epoches):
     pbar_val = progbar(len(testLoader) * batch_size, width=50)
     for i, (inputs, target, phase) in enumerate(testLoader):
         batch_file = epoch_file + '/test_batch_%d' % i
+
         if not os.path.exists(batch_file):
             os.makedirs(batch_file)
         model.eval()
+        
         # Variable
         if args.GPU:
             inputs = Variable(inputs).cuda()
@@ -214,16 +245,21 @@ for epoch in range(epoch_start, num_epoches):
         else:
             inputs = Variable(inputs)
             target = Variable(target)
-        try:
-            out, h_state = model(inputs, h_state)
-        except:
-            break
-        h_state = Variable(h_state.data)
 
-        _, inputs, _ = torch.split(inputs, (513, 513, 513), dim=2)
+        out, h_state = model(inputs, h_state)
+        h_v = []
+        if isinstance(h_state, tuple):
+            for h_i in h_state:
+                h_v.append(Variable(h_i.data))
+            h_state = tuple(h_v)
+        else:
+            h_state = Variable(h_state.data) # useless.
+            
+            
+        _, inputs, _ = torch.split(inputs, 513 , dim=2)
         # loss
-        song_mag_out, voice_mag_out = torch.split(out, (513, 513), dim=2)
-        song_mag_tar, voice_mag_tar = torch.split(target, (513, 513), dim=2)
+        song_mag_out, voice_mag_out = torch.split(out, 513 , dim=2)
+        song_mag_tar, voice_mag_tar = torch.split(target, 513, dim=2)
 
         # Apply mask
         song_mag_mask, voice_mag_mask = soft_mask(song_mag_out, voice_mag_out, inputs)
@@ -244,15 +280,17 @@ for epoch in range(epoch_start, num_epoches):
 #         avg_loss = float(loss) / (batch_size + 1e-4)
         phase = phase.numpy()
 
-        song_spec_out = merge_mag_phase(song_mag_out.cpu().detach().numpy(), phase)
-        voice_spec_out = merge_mag_phase(voice_mag_out.cpu().detach().numpy(), phase)
-        song_spec_mask = merge_mag_phase(song_mag_mask.cpu().detach().numpy(), phase)
-        voice_spec_mask = merge_mag_phase(voice_mag_mask.cpu().detach().numpy(), phase)
+        song_spec_out = merge_mag_phase(song_mag_out.cpu().detach().data.numpy(), phase)
+        voice_spec_out = merge_mag_phase(voice_mag_out.cpu().detach().data.numpy(), phase)
+        song_spec_mask = merge_mag_phase(song_mag_mask.cpu().detach().data.numpy(), phase)
+        voice_spec_mask = merge_mag_phase(voice_mag_mask.cpu().detach().data.numpy(), phase)
 
-        song_spec_tar = merge_mag_phase(song_mag_tar.cpu().detach().numpy(), phase)
-        voice_spec_tar = merge_mag_phase(voice_mag_tar.cpu().detach().numpy(), phase)
+        song_spec_tar = merge_mag_phase(song_mag_tar.cpu().detach().data.numpy(), phase)
+        voice_spec_tar = merge_mag_phase(voice_mag_tar.cpu().detach().data.numpy(), phase)
 
         for batch_item in range(batch_size) :
+            if args.debug and batch_item>1:
+                break
             song_audio = create_audio_from_spectrogram(song_spec_out[batch_item, :, :], args)
             voice_audio = create_audio_from_spectrogram(voice_spec_out[batch_item, :, :], args)
             song_audio_mask = create_audio_from_spectrogram(song_spec_mask[batch_item, :, :], args)
@@ -265,12 +303,16 @@ for epoch in range(epoch_start, num_epoches):
 #             voice_audio_tar = voice_audio_tar[:, np.newaxis]
             mixed_audio = 0.5 * voice_audio_tar + 0.5 * song_audio_tar
 
+            writeWav(os.path.join(batch_file, '%d_%d_song_tar.wav' % (i, batch_item)),
+                     args.sample_rate, song_audio_tar)
+            writeWav(os.path.join(batch_file, '%d_%d_voice_tar.wav' % (i, batch_item)),
+                     args.sample_rate, voice_audio_tar)        
+        
             writeWav(os.path.join(batch_file, '%d_%d_song.wav' % (i, batch_item)),
                      args.sample_rate, song_audio)
             writeWav(os.path.join(batch_file, '%d_%d_voice.wav' % (i, batch_item)),
                      args.sample_rate, voice_audio)
-            writeWav(os.path.join(batch_file, '%d_%d_mixed.wav' % (i, batch_item)),
-                     args.sample_rate, mixed_audio)
+
             writeWav(os.path.join(batch_file, '%d_%d_song_mask.wav' % (i, batch_item)),
                      args.sample_rate, song_audio_mask)
             writeWav(os.path.join(batch_file, '%d_%d_voice_mask.wav' % (i, batch_item)),
@@ -278,10 +320,19 @@ for epoch in range(epoch_start, num_epoches):
 
             pbar_val.update(i * batch_size + batch_item + 1, [])
             soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, voice_audio_tar, song_audio_mask, voice_audio_mask)
+            
+            # with mask
             log = '=> done write :' + '%d_%d' % (i, batch_item) + "| GNSDR 0: " +str(soft_gnsdr[0])+ " | GNSDR 1: " + \
                     str(soft_gnsdr[1])+" | GSIR 0: " + str(soft_gsir[0])+ " | GSIR 1: " +str(soft_gsir[1])+" | GSAR 0: " + \
-                    str(soft_gsar[0])+" | GSAR 1: "+str(soft_gsar[1])+"\n"
-            logger['test'].write(log)
+                    str(soft_gsar[0])+" | GSAR 1: "+str(soft_gsar[1]) + '\n'
+            logger['test_mask'].write(log)
+            # without mask usually disabled
+#             soft_gnsdr, soft_gsir, soft_gsar = bss_eval_global(mixed_audio, song_audio_tar, voice_audio_tar, song_audio, voice_audio)
+#             log = '=> done write :' + '%d_%d' % (i, batch_item) + "| GNSDR 0: " +str(soft_gnsdr[0])+ " | GNSDR 1: " + \
+#                     str(soft_gnsdr[1])+" | GSIR 0: " + str(soft_gsir[0])+ " | GSIR 1: " +str(soft_gsir[1])+" | GSAR 0: " + \
+#                     str(soft_gsar[0])+" | GSAR 1: "+str(soft_gsar[1]) + '\n'
+#             logger['test'].write(log)
+            
         del loss
         del song_mag_out
         del voice_mag_out

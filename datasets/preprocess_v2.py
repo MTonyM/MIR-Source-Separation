@@ -23,6 +23,8 @@ def listGenerate(args):
         records.remove('.ipynb_checkpoints')
     except:
         pass
+    records.sort(key=str.lower)
+#     print(records)
     total_num = len(records)
     ####### check folder exist
     wav_folder = "./../../data/wav/" + args.dataset
@@ -75,20 +77,26 @@ def stftGenerate(args, info):
         #############################
 
         # load records
+        wav_name = records[idx].split('.')[0]
+        
         record_path = os.path.join(base_dir, records[idx])
-        sound, sample_rate = librosa.load(record_path, mono=False, sr=44100)
+        try:
+            sound, sample_rate = librosa.load(record_path, mono=False, sr=44100)
+        except AttributeError:
+            print('\n File Broken:',record+path ,'\n' )
         song, voice = sound[0, :], sound[1, :]
 
         # resample + mix
         song = librosa.resample(song, sample_rate, 16000)
         voice = librosa.resample(voice, sample_rate, 16000)
         print(voice.shape)
-
-        if idx <= int(len(records) * args.train_ratio):
-            mode = 'train'
-        else:
-            mode = 'test'
-
+#2018.10.28 
+#         if idx <= int(len(records) * float(args.train_ratio)):
+#             mode = 'train'
+#         elif idx > int(len(records) * float(args.train_ratio)) : #(avoid same singer in trainset included)
+#             mode = 'test'
+#         else: continue
+        print("=> saved #%d: " % (idx), wav_name )
         for shift_len in shift_num:
             shift_len = shift_len * 4000
             song = np.roll(song, shift_len)
@@ -114,7 +122,7 @@ def stftGenerate(args, info):
             song_mag, voice_mag, mixed_mag = np.absolute(song_spec), np.absolute(voice_spec), np.absolute(mixed_spec)
             song_phase, voice_phase, mixed_phase = get_phase(song_spec), get_phase(voice_spec), get_phase(mixed_spec)
 
-            wav_name = records[idx].split('.')[0]
+            
             data = {
                 "song": song_spec,
                 "song_mag": song_mag,
@@ -128,15 +136,15 @@ def stftGenerate(args, info):
                 "wav_name": wav_name
             }
 
-            file_path = os.path.join("/root/MIR-separation/DL_monaural_separation/pyTorch_version/data/pre/" + args.dataset + "/" + mode,
+            file_path = os.path.join("/root/MIR-separation/DL_monaural_separation/pyTorch_version/data/pre/" + args.dataset + "/" +
                                      wav_name + "_spec_shiftStep_%d.pth" % (shift_len))
 
             torch.save(data, file_path)
-            print("=> saved #%d: " % (idx), file_path)
+            
             all_spec.append(file_path)
 
     info = {
-        "iKala_specs": all_spec
+        "All_specs": all_spec
     }
 
 #     torch.save(info, "./../../data/spec/" + args.dataset + "_spec_f%d_h%d.pth" % (len_frame, len_hop))

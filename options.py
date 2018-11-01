@@ -26,7 +26,7 @@ def get_args():
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
     
     ##################  Data Set
-    parser.add_argument('--dataset', help='dataset to use.', default='sub_MIR_1K')
+    parser.add_argument('--dataset', help='dataset to use.', default='MIR_1K')
     parser.add_argument('--dir', help='path of dataset', default=None)
     parser.add_argument('--data_root', help='raw data path',
                         default="/root/MIR-separation/DL_monaural_separation/pyTorch_version/data")
@@ -50,7 +50,7 @@ def get_args():
 
     parser.add_argument('--mode', help='0: train 1:test', default=0)
     parser.add_argument('--saveEpoch', default=5, type=int, help='saving at least # epochs')
-    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.7)
+    parser.add_argument('--train_ratio', help='ratio of trainset in dataset', default=0.1757)
 
     args = parser.parse_args()
 
@@ -58,9 +58,18 @@ def get_args():
     if args.dataset == 'iKala':
         args.dir = '/root/MIR-separation/dataset/iKala/Wavfile'
         args.sample_rate = 44100
-    elif args.dataset == 'sub_MIR_1K':
-        args.dir = '/root/MIR-separation/dataset/sub_MIR_1K/all'
+    elif args.dataset == 'MIR_1K':
+        args.dir = '/root/MIR-separation/dataset/MIR_1K/all'
         args.sample_rate =16000
+    elif args.dataset == 'MIR_1K_pitch0.8':
+        args.dir = '/root/MIR-separation/dataset/MIR_1K_pitch0.8'
+        args.sample_rate =16000
+    elif args.dataset == 'MIR_1K_pitch1.3':
+        args.dir = '/root/MIR-separation/dataset/MIR_1K_pitch1.3'
+        args.sample_rate =16000
+    elif args.dataset =='MIR_1K_aug':
+        args.dir = '/root/MIR-separation/dataset/MIR_1K_aug'
+        
     if args.aug:
         args.dataset = args.dataset + '_aug'
 

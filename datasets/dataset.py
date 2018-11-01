@@ -12,23 +12,24 @@ class DataList(Dataset):
         pth_name = args.dataset + "_spec_f%d_h%d.pth" % (self.len_frame, self.len_hop)
         pth_path = os.path.join(args.data_root, "info", pth_name)
 #         spec_list = torch.load(pth_path)[args.dataset + "_specs"]
-        spec_list = torch.load(pth_path)["iKala_specs"]
+        spec_list = torch.load(pth_path)["All_specs"]
 
         self.train_ratio = args.train_ratio
         total_batches = int(np.ceil(len(spec_list) / args.batch_size))
-        split_index = int(np.floor(total_batches * self.train_ratio)) * args.batch_size
+        split_index = int(np.floor(total_batches * float(self.train_ratio))) * args.batch_size
 
         if mode == 'train':
             self.spec_list = spec_list[0:split_index]
-        else:
+        else: #train mode
 
             self.spec_list = [ x for x in spec_list[split_index:] if int(re.split(r"[._/]",x)[-2]) == 0]
-            self.spec_list = self.spec_list[0:100]
+            self.spec_list = self.spec_list[-150:]
 
     def __getitem__(self, idx):
         data = torch.load(self.spec_list[idx])
         song_mag, voice_mag, mixed_mag, phase = data['song_mag'], data['voice_mag'], data['mixed_mag'], data[
             'mixed_phase']
+
 
         # 
 #         print (mixed_mag.shape)
@@ -38,7 +39,8 @@ class DataList(Dataset):
         mixed_mag_pre = np.concatenate((mixed_mag[0][np.newaxis,:],mixed_mag[0:(length-1)][:]),axis=0)
         mixed_mag_next = np.concatenate((mixed_mag[1:length][:],mixed_mag[length-1][np.newaxis,:]),axis=0)
         
-        pad_mode = 'wrap'
+#         pad_mode = 'wrap'  # repeat pading
+        pad_mode = 'constant' # zero pading
         input_mag = np.concatenate((mixed_mag_pre, mixed_mag, mixed_mag_next), axis=1)
         input_mag = np.pad(input_mag, ((0, 400-input_mag.shape[0]), (0, 0)), pad_mode)
         target_mag = np.concatenate((song_mag, voice_mag), axis=1)
@@ -47,7 +49,7 @@ class DataList(Dataset):
         
 #         print(input_mag.shape)
 #         print(phase.shape)
-        return input_mag, target_mag, phase
+        return input_mag, target_mag, phase 
     
 
     def __len__(self):
